@@ -64,6 +64,13 @@ const oidcLoadingSlug = ref<string | null>(null)
 function resolveLoginError(err: unknown): string {
   if (!(err instanceof Error)) return t('auth.login.errors.invalidCredentials')
 
+  // The service worker precaches the app shell, so this page renders fine with no route
+  // to the server. Without this branch the raw "Failed to fetch" surfaces and reads like
+  // a rejected password.
+  if (err instanceof TypeError || !navigator.onLine) {
+    return t('auth.login.errors.unreachable')
+  }
+
   const normalizedMessage = err.message.trim().toLowerCase()
   if (normalizedMessage.includes('too many requests')) {
     return t('auth.login.errors.tooManyAttempts')

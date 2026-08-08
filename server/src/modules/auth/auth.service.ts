@@ -61,6 +61,16 @@ const DUMMY_HASH = '$2a$12$LJ3m4ys3Lk0TSwHBbqP8b.3bFfR1oVDMhPzX8KPrPeuMEJBJJPa.G
 
 class ConcurrentRotationError extends Error {}
 
+/**
+ * Distinguishing a lockout from a bad password tells an attacker the username exists.
+ * That is an accepted trade here: a locked account otherwise reports the correct password
+ * as invalid, with no way for the account holder to tell why.
+ */
+function lockoutMessage(lockedUntil: Date, now: Date): string {
+  const minutes = Math.max(1, Math.ceil((lockedUntil.getTime() - now.getTime()) / 60_000));
+  return `Account locked after too many failed login attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`;
+}
+
 function maskEmail(email: string): string {
   const at = email.indexOf('@');
   if (at <= 0) return '***';
@@ -215,7 +225,7 @@ export class AuthService {
         ip,
         meta: { attemptedUsername: dto.username, lockout: true, lockedUntil: user.lockedUntil.toISOString() },
       });
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException(lockoutMessage(user.lockedUntil, now));
     }
 
     const passwordHash = user?.passwordHash ?? DUMMY_HASH;
@@ -235,7 +245,7 @@ export class AuthService {
           ? { attemptedUsername: dto.username, lockout: true, lockedUntil: lockedUntil.toISOString() }
           : { attemptedUsername: dto.username },
       });
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException(lockedUntil ? lockoutMessage(lockedUntil, now) : 'Invalid credentials');
     }
 
     if ((user.failedLoginAttempts ?? 0) > 0 || user.lockedUntil) {

@@ -331,6 +331,51 @@ describe('AuthService', () => {
       expect(db.update).not.toHaveBeenCalled();
     });
 
+    it('reports a lockout distinctly from invalid credentials, with the remaining wait', async () => {
+      const { service, userService } = makeService();
+      userService.findByUsername.mockResolvedValue({
+        id: 1,
+        username: 'jdoe',
+        active: true,
+        passwordHash: 'mock-hash:pass',
+        tokenVersion: 1,
+        failedLoginAttempts: 0,
+        lockedUntil: new Date(Date.now() + 9 * 60_000),
+      });
+
+      await expect(service.login({ username: 'jdoe', password: 'pass' }, makeReply())).rejects.toThrow(/Account locked.*9 minutes/);
+    });
+
+    it('reports the lockout on the attempt that triggers it', async () => {
+      const { service, userService } = makeService();
+      userService.findByUsername.mockResolvedValue({
+        id: 1,
+        username: 'jdoe',
+        active: true,
+        passwordHash: 'mock-hash:correct',
+        tokenVersion: 1,
+        failedLoginAttempts: 4,
+        lockedUntil: null,
+      });
+
+      await expect(service.login({ username: 'jdoe', password: 'wrong' }, makeReply())).rejects.toThrow(/Account locked.*15 minutes/);
+    });
+
+    it('still reports a wrong password as invalid credentials', async () => {
+      const { service, userService } = makeService();
+      userService.findByUsername.mockResolvedValue({
+        id: 1,
+        username: 'jdoe',
+        active: true,
+        passwordHash: 'mock-hash:correct',
+        tokenVersion: 1,
+        failedLoginAttempts: 1,
+        lockedUntil: null,
+      });
+
+      await expect(service.login({ username: 'jdoe', password: 'wrong' }, makeReply())).rejects.toThrow('Invalid credentials');
+    });
+
     it('increments failed login attempts for wrong password and non-locked account', async () => {
       const { service, db, userService } = makeService();
       userService.findByUsername.mockResolvedValue({

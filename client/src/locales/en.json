@@ -2968,7 +2968,8 @@
       "forgotPassword": "Forgot password?",
       "errors": {
         "invalidCredentials": "Invalid username or password",
-        "tooManyAttempts": "Too many login attempts. Please wait a minute and try again."
+        "tooManyAttempts": "Too many login attempts. Please wait a minute and try again.",
+        "unreachable": "Cannot reach the BookOrbit server. Check your network connection, and if you reach BookOrbit over a VPN, make sure it is connected."
       }
     },
     "oidc": {

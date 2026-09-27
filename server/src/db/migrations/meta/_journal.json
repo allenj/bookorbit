@@ -701,6 +701,13 @@
       "when": 1790446233976,
       "tag": "0099_fractional_finished_threshold",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1790479444509,
+      "tag": "0100_add_storyteller_integration",
+      "breakpoints": true
     }
   ]
 }

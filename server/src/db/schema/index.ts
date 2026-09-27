@@ -41,5 +41,6 @@ export * from './storygraph';
 export * from './shared-reading-insights';
 export * from './user-preferences';
 export * from './tts';
+export * from './storyteller';
 export * from './upload-sessions';
 export * from './podcasts';

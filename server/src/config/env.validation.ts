@@ -95,6 +95,7 @@ const envSchema = z.object({
     .refine((val) => val === '' || isAbsolute(val), 'MIGRATION_IMPORT_ROOT must be an absolute path')
     .optional(),
   PODCAST_ENCRYPTION_KEY: z.string().trim().min(16).optional(),
+  STORYTELLER_ENCRYPTION_KEY: z.string().trim().min(16).optional(),
   PODCAST_MAX_FEED_BYTES: z.coerce
     .number()
     .int()

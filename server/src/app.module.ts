@@ -18,6 +18,7 @@ import {
   oidcRuntimeConfig,
   podcastConfig,
   storageConfig,
+  storytellerConfig,
 } from './config/config';
 import { validateEnv } from './config/env.validation';
 import { loggerConfig } from './common/logger.config';
@@ -92,6 +93,7 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { BookMoveModule } from './modules/book-move/book-move.module';
 import { AudiobookModule } from './modules/audiobook/audiobook.module';
 import { TtsModule } from './modules/tts/tts.module';
+import { StorytellerModule } from './modules/storyteller/storyteller.module';
 import { SearchModule } from './modules/search/search.module';
 import { WatchDownloadModule } from './modules/watch-download/watch-download.module';
 import { PodcastModule } from './modules/podcast/podcast.module';
@@ -115,6 +117,7 @@ import { PodcastModule } from './modules/podcast/podcast.module';
         oidcRuntimeConfig,
         podcastConfig,
         audiolessEpubConfig,
+        storytellerConfig,
       ],
     }),
     ScheduleModule.forRoot(),
@@ -194,6 +197,7 @@ import { PodcastModule } from './modules/podcast/podcast.module';
     BookMoveModule,
     BrowseCountsModule,
     TtsModule,
+    StorytellerModule,
     SearchModule,
     WatchDownloadModule,
     PodcastModule,

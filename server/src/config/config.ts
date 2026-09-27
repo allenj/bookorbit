@@ -87,6 +87,14 @@ export const podcastConfig = registerAs('podcast', () => ({
   maxDownloadDurationMs: parsePositiveInteger(process.env.PODCAST_MAX_DOWNLOAD_DURATION_MS, 6 * 60 * 60_000),
 }));
 
+/**
+ * The Storyteller server password. Falls back to JWT_SECRET like the podcast key; losing it only
+ * means re-entering the password, so it is not required in production.
+ */
+export const storytellerConfig = registerAs('storyteller', () => ({
+  encryptionKey: process.env.STORYTELLER_ENCRYPTION_KEY?.trim() || process.env.JWT_SECRET || 'change-me-in-production',
+}));
+
 export const oidcRuntimeConfig = registerAs('oidcRuntime', () => ({
   stateTtlMs: parsePositiveInteger(process.env.OIDC_STATE_TTL_SECS, 300) * 1000,
   discoveryCacheTtlMs: parsePositiveInteger(process.env.OIDC_DISCOVERY_CACHE_TTL_SECS, 3600) * 1000,

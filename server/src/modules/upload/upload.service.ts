@@ -30,6 +30,7 @@ import { computeFileHash } from '../scanner/lib/hash';
 import { resolveExistingPathSpelling } from '../../common/utils/path-identity.utils';
 import { inspectEpubMediaOverlayFields, mediaOverlayCapabilityFromFields } from '../reader/epub/epub-media-overlay-capability';
 import { PathPolicyService } from '../path/path-policy.service';
+import { SelfWriteRegistry } from '../../common/services/self-write-registry.service';
 import { FORMATS_WITH_UNBOUNDED_METADATA_READS, MAX_BUFFERED_METADATA_BYTES } from '../../common/constants/upload.constants';
 import { UploadDestinationExistsError } from './upload-storage.service';
 import { uploadError } from './upload-errors';
@@ -50,6 +51,7 @@ export class UploadService {
     private readonly processor: UploadProcessorService,
     private readonly moduleRef: ModuleRef,
     private readonly pathPolicy: PathPolicyService,
+    private readonly selfWriteRegistry: SelfWriteRegistry,
   ) {}
 
   private resolveFileRenameService(): FileRenameService | null {
@@ -183,7 +185,12 @@ export class UploadService {
     }
   }
 
-  async addFileToBook(bookId: number, rawFilename: string, fileStream: Readable, user: RequestUser): Promise<AddBookFileResult> {
+  async addFileToBook(
+    bookId: number,
+    rawFilename: string,
+    fileStream: Readable,
+    user: Pick<RequestUser, 'id' | 'isSuperuser'>,
+  ): Promise<AddBookFileResult> {
     const event = 'book.add_file';
     const startedAt = Date.now();
     this.logger.log(
@@ -226,6 +233,7 @@ export class UploadService {
 
     let destination: string | null = null;
     let shouldCleanupDestination = false;
+    let suppressedDestination: string | null = null;
 
     try {
       await this.validator.validateContent(tempPath, format);
@@ -249,6 +257,10 @@ export class UploadService {
       }
 
       shouldCleanupDestination = true;
+      // Held until the row commits: a watcher rescan in between would register the file itself,
+      // as new, and re-extract metadata from it.
+      this.selfWriteRegistry.begin([destination]);
+      suppressedDestination = destination;
       await this.storage.moveToPath(tempPath, destination);
       // File is on disk. Do not delete it on any subsequent failure — the scanner
       // will reconcile any orphan. This also prevents the catch block from deleting
@@ -335,6 +347,8 @@ export class UploadService {
           finalStatus: needsStatusUpdate ? 'present' : lockedBook.status,
         };
       });
+      this.selfWriteRegistry.end([destination]);
+      suppressedDestination = null;
 
       this.processor.extractAudioDurationAsync(bookId, destination, format);
       this.processor.extractAddedAudioChaptersAsync(bookId, format);
@@ -357,6 +371,7 @@ export class UploadService {
         bookStatus: finalStatus,
       };
     } catch (caught) {
+      if (suppressedDestination) this.selfWriteRegistry.end([suppressedDestination]);
       let err = caught;
       if (err instanceof UploadDestinationExistsError) {
         err = uploadError.destinationConflict(`A file named "${filename}" already exists in this book's folder`);

@@ -21,6 +21,7 @@ import { computeFileHash } from '../scanner/lib/hash';
 import { books } from '../../db/schema';
 
 import { UploadService } from './upload.service';
+import { SelfWriteRegistry } from '../../common/services/self-write-registry.service';
 
 const mockFsAccess = fsAccess as MockedFunction<typeof fsAccess>;
 const mockLstat = lstat as MockedFunction<typeof lstat>;
@@ -112,6 +113,7 @@ describe('UploadService', () => {
   const pathPolicy = { assertWithinRoot: vi.fn() };
 
   let service: UploadService;
+  let selfWriteRegistry: SelfWriteRegistry;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -128,6 +130,7 @@ describe('UploadService', () => {
       processor as any,
       moduleRef as any,
       pathPolicy as any,
+      (selfWriteRegistry = new SelfWriteRegistry()),
     );
 
     validator.sanitizeFilename.mockReturnValue('book.epub');
@@ -941,6 +944,31 @@ describe('UploadService', () => {
       expect(result.format).toBe('epub');
       expect(result.bookStatus).toBe('present');
       expect(result.role).toBe('content');
+    });
+
+    it('keeps the watcher off the new file from the move until its row commits', async () => {
+      db.select.mockReturnValueOnce(selectJoinChain([makeBookRow()])).mockReturnValueOnce(noHashConflict());
+      const destination = '/library/Book Title/book.epub';
+      let suppressedDuringMove = false;
+      storage.moveToPath.mockImplementation(() => {
+        suppressedDuringMove = selfWriteRegistry.isSuppressed(destination);
+        return Promise.resolve();
+      });
+
+      await service.addFileToBook(10, 'book.epub', {} as any, user);
+
+      expect(suppressedDuringMove).toBe(true);
+      expect(selfWriteRegistry.isSuppressed(destination)).toBe(false);
+    });
+
+    it('hands the file back to the watcher when the row cannot be written', async () => {
+      db.select.mockReturnValueOnce(selectJoinChain([makeBookRow()])).mockReturnValueOnce(noHashConflict());
+      db.transaction.mockRejectedValueOnce(new Error('insert failed'));
+
+      await expect(service.addFileToBook(10, 'book.epub', {} as any, user)).rejects.toThrow('insert failed');
+
+      expect(selfWriteRegistry.isSuppressed('/library/Book Title/book.epub')).toBe(false);
+      expect(storage.cleanup).not.toHaveBeenCalledWith('/library/Book Title/book.epub');
     });
 
     it.each([

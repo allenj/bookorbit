@@ -80,5 +80,6 @@ export * from "./sidebar";
 export * from "./cover-search-preferences";
 export * from "./cron";
 export * from "./tts";
+export * from "./storyteller";
 export * from "./watch-download";
 export * from "./podcast";

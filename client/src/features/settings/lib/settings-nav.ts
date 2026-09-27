@@ -508,6 +508,14 @@ export const SETTINGS_NAV: readonly SettingsNavGroup[] = [
         isVisible: anyPermission('manage_app_settings'),
       },
       {
+        id: 'admin-storyteller',
+        routeName: 'settings-admin-storyteller',
+        labelKey: 'settings.admin.tabs.storyteller',
+        icon: AudioLines,
+        keywords: 'storyteller read-along readaloud media overlay alignment whisper narration',
+        isVisible: anyPermission('manage_app_settings'),
+      },
+      {
         id: 'book-dock',
         routeName: 'settings-admin-book-dock',
         labelKey: 'settings.system.tabs.book-dock',

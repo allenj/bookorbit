@@ -16,6 +16,7 @@ import FileListCard from '../files/FileListCard.vue'
 import FileDetailCard from '../files/FileDetailCard.vue'
 import WriteBackCard from '../files/WriteBackCard.vue'
 import AddBookFileModal from './AddBookFileModal.vue'
+import StorytellerReadAlongPanel from '@/features/storyteller/components/StorytellerReadAlongPanel.vue'
 
 const props = defineProps<{ book: BookDetail }>()
 const emit = defineEmits<{ refetch: [] }>()
@@ -225,6 +226,10 @@ async function confirmDelete() {
     deleting.value = false
   }
 }
+
+function handleReadAlongCompleted() {
+  emit('refetch')
+}
 </script>
 
 <template>
@@ -243,6 +248,8 @@ async function confirmDelete() {
       @sort="handleSort"
       @add-file="openAddFileModal"
     />
+
+    <StorytellerReadAlongPanel :book-id="book.id" :can-upload="canUpload" @completed="handleReadAlongCompleted" />
 
     <!-- Empty state -->
     <section

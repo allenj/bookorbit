@@ -509,6 +509,12 @@ export const routes: RouteRecordRaw[] = [
             meta: { maxWidth: 'max-w-4xl', title: () => t('titles.admin.tts') },
           },
           {
+            path: 'admin/storyteller',
+            name: 'settings-admin-storyteller',
+            component: () => import('@/features/storyteller/StorytellerAdminSettings.vue'),
+            meta: { maxWidth: 'max-w-3xl', title: () => t('titles.admin.storyteller') },
+          },
+          {
             path: 'admin/book-dock',
             name: 'settings-admin-book-dock',
             component: () => import('@/features/settings/BookDockSettings.vue'),
